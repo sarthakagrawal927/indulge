@@ -75,8 +75,7 @@ if (ai.product?.name !== "Indulge")
   throw new Error("AI product surface does not identify Indulge.");
 if (ai.markdown?.negotiation !== true)
   throw new Error("AI product surface must have markdown.negotiation set to true.");
-if (!ai.openapi)
-  throw new Error("AI product surface must include an openapi field.");
+if (!ai.openapi) throw new Error("AI product surface must include an openapi field.");
 
 console.log(
   `Checked ${requiredFiles.length} built public surfaces and ${localHrefs.length} internal links.`
