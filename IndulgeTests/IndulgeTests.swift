@@ -28,6 +28,17 @@ struct IndulgeTests {
     )
   }
 
+  @Test func illustratedOnboardingMarkerPersistsAfterDismissal() throws {
+    let suiteName = "habits-illustrated-onboarding-\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    defer { defaults.removePersistentDomain(forName: suiteName) }
+    let store = OnboardingProfileStore(defaults: defaults)
+
+    #expect(!store.hasSeenIllustratedOnboarding)
+    store.markIllustratedOnboardingSeen()
+    #expect(store.hasSeenIllustratedOnboarding)
+  }
+
   @Test func mainJourneyAsksIdentityBeforeShowingACharacter() {
     #expect(PersonalOnboardingStep.allCases.count == 12)
     #expect(
