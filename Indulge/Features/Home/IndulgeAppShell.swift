@@ -358,6 +358,12 @@ private struct IndulgeAboutView: View {
         }
 
         Section("About") {
+          Button {
+            dismiss()
+            NotificationCenter.default.post(name: .indulgeReplayOnboarding, object: nil)
+          } label: {
+            Label("Replay onboarding", systemImage: "sparkles")
+          }
           Link(
             "Privacy",
             destination: URL(string: "https://habits.significanthobbies.com/privacy/")!)

@@ -16,6 +16,7 @@ struct ContentView: View {
   @Query(sort: \OnboardingProfileRecord.updatedAt, order: .reverse)
   private var profileRecords: [OnboardingProfileRecord]
   @State private var completedProfile: OnboardingProfile?
+  @State private var isReplayingOnboarding = false
   @State private var privacyLifecycle: PrivacyLockLifecycle
   @State private var isAuthenticating = false
   @State private var privacyMessage: String?
@@ -57,11 +58,17 @@ struct ContentView: View {
             startsWithCompletedTrade: route.startsWithCompletedTrade
           )
         } else {
-          IndulgeOnboardingView { profile in
-            profileStore.save(profile)
-            try? OnboardingProfileRepository(context: modelContext).save(profile)
+          IndulgeOnboardingView(
+            isReplay: isReplayingOnboarding,
+            onCancel: { isReplayingOnboarding = false }
+          ) { profile in
+            if !isReplayingOnboarding {
+              profileStore.save(profile)
+              try? OnboardingProfileRepository(context: modelContext).save(profile)
+            }
             withAnimation(.smooth(duration: 0.55)) {
-              completedProfile = profile
+              if !isReplayingOnboarding { completedProfile = profile }
+              isReplayingOnboarding = false
             }
           }
         }
@@ -120,6 +127,9 @@ struct ContentView: View {
       privacyLockEnabled = false
       privacyLifecycle.privacyLockWasDisabled()
     }
+    .onReceive(NotificationCenter.default.publisher(for: .indulgeReplayOnboarding)) { _ in
+      isReplayingOnboarding = true
+    }
   }
 
   private var protectsContent: Bool {
@@ -151,6 +161,7 @@ struct ContentView: View {
   }
 
   private var displayedProfile: OnboardingProfile? {
+    if isReplayingOnboarding { return nil }
     if route.opensApplication { return completedProfile }
     guard route == .automatic else { return completedProfile }
     return completedProfile ?? profileRecords.first?.profile
@@ -281,6 +292,7 @@ struct OnboardingProfileStore {
 
 extension Notification.Name {
   static let indulgeAllDataDeleted = Notification.Name("indulge-all-data-deleted")
+  static let indulgeReplayOnboarding = Notification.Name("indulge-replay-onboarding")
 }
 
 #Preview("Onboarding") {
