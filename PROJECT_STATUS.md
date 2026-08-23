@@ -1,6 +1,6 @@
 # Habits — Project Status
 
-Last updated: 2026-08-21
+Last updated: 2026-08-23
 
 ## Why / What
 
@@ -24,6 +24,12 @@ not as punishment, streaks, or productivity metrics.
   the immediate store; private CloudKit remains a temporary rollback path.
 
 ## Timeline
+
+- **2026-08-23:** Separated Apple-private iCloud device continuity from
+  Significant Hobbies Hub visibility in Habits settings. Hub sync now states
+  its completed-trade/check-in scope, reports actual durable outbox work and
+  the last successful sync, and distinguishes session, network, and service
+  failures without blocking local use.
 
 - **2026-08-22:** Apple completed processing 0.1.0 (6) and confirmed it
   available to internal TestFlight testers on personal team `8F7LXHTJZR`.
@@ -137,8 +143,10 @@ not as punishment, streaks, or productivity metrics.
   three humane outcomes, a causal completion pocket, and real History totals.
 - Offline manual behavior, optional availability-gated Apple Image Playground,
   Reduce Motion, Dynamic Type, VoiceOver, and Light/Dark support.
-- Optional Apple sign-in and Cloudflare synchronization for completed trades,
-  with local-first writes and a visible manual refresh path.
+- Optional Apple sign-in and Significant Hobbies Hub synchronization for
+  completed trades/check-ins, with local-first writes, a visible manual
+  refresh path, durable pending-work and last-success state, and truthful
+  session/network/service retry guidance.
 - App Store identity assets plus an inspected distribution package on
   internal TestFlight. External beta testing and App Store review remain
   separate, unauthorized actions.
