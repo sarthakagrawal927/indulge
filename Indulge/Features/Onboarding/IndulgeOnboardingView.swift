@@ -19,13 +19,13 @@ struct IndulgeOnboardingView: View {
   @AccessibilityFocusState private var headingFocused: Bool
   private let initiallyFocusesTextEntry: Bool
   private let automaticallyDemonstratesScene: Bool
-  private let isReplay: Bool
+  private let isExistingOwnerOrientation: Bool
   private let onCancel: () -> Void
   private let onComplete: (OnboardingProfile) -> Void
 
   init(
     preset: PersonalOnboardingPreset = .launchArguments,
-    isReplay: Bool = false,
+    isExistingOwnerOrientation: Bool = false,
     onCancel: @escaping () -> Void = {},
     onComplete: @escaping (OnboardingProfile) -> Void = { _ in }
   ) {
@@ -42,7 +42,7 @@ struct IndulgeOnboardingView: View {
     _activitySelectionNotice = State(initialValue: nil)
     initiallyFocusesTextEntry = preset.focusesTextEntry
     automaticallyDemonstratesScene = preset.automaticallyDemonstratesScene
-    self.isReplay = isReplay
+    self.isExistingOwnerOrientation = isExistingOwnerOrientation
     self.onCancel = onCancel
     self.onComplete = onComplete
   }
@@ -232,7 +232,7 @@ struct IndulgeOnboardingView: View {
       .frame(height: 44)
       .frame(maxWidth: .infinity)
 
-      if isReplay {
+      if isExistingOwnerOrientation {
         Button("Close", action: onCancel)
           .font(.indulgeLabel)
           .foregroundStyle(step == .name ? Color.indulgeNavy : .white.opacity(0.9))

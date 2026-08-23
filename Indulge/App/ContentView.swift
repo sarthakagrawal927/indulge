@@ -16,7 +16,7 @@ struct ContentView: View {
   @Query(sort: \OnboardingProfileRecord.updatedAt, order: .reverse)
   private var profileRecords: [OnboardingProfileRecord]
   @State private var completedProfile: OnboardingProfile?
-  @State private var isReplayingOnboarding = false
+  @State private var isExistingOwnerOrientation: Bool
   @State private var privacyLifecycle: PrivacyLockLifecycle
   @State private var isAuthenticating = false
   @State private var privacyMessage: String?
@@ -35,6 +35,11 @@ struct ContentView: View {
     self.authenticationService = authenticationService
     self.resetsTestingData = resetsTestingData
     let restoredProfile = route == .automatic ? profileStore.load() : nil
+    _isExistingOwnerOrientation = State(
+      initialValue: route == .automatic
+        && restoredProfile != nil
+        && !profileStore.hasSeenIllustratedOnboarding
+    )
     _completedProfile = State(
       initialValue: route.opensApplication ? .appPreview : restoredProfile
     )
@@ -59,16 +64,17 @@ struct ContentView: View {
           )
         } else {
           IndulgeOnboardingView(
-            isReplay: isReplayingOnboarding,
-            onCancel: { isReplayingOnboarding = false }
+            isExistingOwnerOrientation: isExistingOwnerOrientation,
+            onCancel: finishExistingOwnerOrientation
           ) { profile in
-            if !isReplayingOnboarding {
+            if !isExistingOwnerOrientation {
               profileStore.save(profile)
               try? OnboardingProfileRepository(context: modelContext).save(profile)
             }
+            profileStore.markIllustratedOnboardingSeen()
             withAnimation(.smooth(duration: 0.55)) {
-              if !isReplayingOnboarding { completedProfile = profile }
-              isReplayingOnboarding = false
+              if !isExistingOwnerOrientation { completedProfile = profile }
+              isExistingOwnerOrientation = false
             }
           }
         }
@@ -95,6 +101,12 @@ struct ContentView: View {
         privacyLockEnabled = false
         privacyLifecycle.privacyLockWasDisabled()
         completedProfile = nil
+      }
+      if route == .automatic,
+        !profileStore.hasSeenIllustratedOnboarding,
+        completedProfile != nil || !profileRecords.isEmpty
+      {
+        isExistingOwnerOrientation = true
       }
       guard route == .automatic, profileRecords.isEmpty, let completedProfile else { return }
       try? OnboardingProfileRepository(context: modelContext).save(completedProfile)
@@ -127,9 +139,6 @@ struct ContentView: View {
       privacyLockEnabled = false
       privacyLifecycle.privacyLockWasDisabled()
     }
-    .onReceive(NotificationCenter.default.publisher(for: .indulgeReplayOnboarding)) { _ in
-      isReplayingOnboarding = true
-    }
   }
 
   private var protectsContent: Bool {
@@ -161,10 +170,15 @@ struct ContentView: View {
   }
 
   private var displayedProfile: OnboardingProfile? {
-    if isReplayingOnboarding { return nil }
+    if isExistingOwnerOrientation { return nil }
     if route.opensApplication { return completedProfile }
     guard route == .automatic else { return completedProfile }
     return completedProfile ?? profileRecords.first?.profile
+  }
+
+  private func finishExistingOwnerOrientation() {
+    profileStore.markIllustratedOnboardingSeen()
+    isExistingOwnerOrientation = false
   }
 
   private var initialTab: IndulgeAppTab {
@@ -269,6 +283,7 @@ enum IndulgeLaunchRoute: Equatable, Sendable {
 
 struct OnboardingProfileStore {
   private static let key = "completed-onboarding-profile-v1"
+  private static let illustratedOnboardingSeenKey = "habits.illustrated-onboarding.seen.v1"
   private let defaults: UserDefaults
 
   init(defaults: UserDefaults = .standard) {
@@ -288,11 +303,18 @@ struct OnboardingProfileStore {
   func delete() {
     defaults.removeObject(forKey: Self.key)
   }
+
+  var hasSeenIllustratedOnboarding: Bool {
+    defaults.bool(forKey: Self.illustratedOnboardingSeenKey)
+  }
+
+  func markIllustratedOnboardingSeen() {
+    defaults.set(true, forKey: Self.illustratedOnboardingSeenKey)
+  }
 }
 
 extension Notification.Name {
   static let indulgeAllDataDeleted = Notification.Name("indulge-all-data-deleted")
-  static let indulgeReplayOnboarding = Notification.Name("indulge-replay-onboarding")
 }
 
 #Preview("Onboarding") {
