@@ -19,10 +19,14 @@ struct IndulgeOnboardingView: View {
   @AccessibilityFocusState private var headingFocused: Bool
   private let initiallyFocusesTextEntry: Bool
   private let automaticallyDemonstratesScene: Bool
+  private let isReplay: Bool
+  private let onCancel: () -> Void
   private let onComplete: (OnboardingProfile) -> Void
 
   init(
     preset: PersonalOnboardingPreset = .launchArguments,
+    isReplay: Bool = false,
+    onCancel: @escaping () -> Void = {},
     onComplete: @escaping (OnboardingProfile) -> Void = { _ in }
   ) {
     let initialProfile = preset.profile
@@ -38,6 +42,8 @@ struct IndulgeOnboardingView: View {
     _activitySelectionNotice = State(initialValue: nil)
     initiallyFocusesTextEntry = preset.focusesTextEntry
     automaticallyDemonstratesScene = preset.automaticallyDemonstratesScene
+    self.isReplay = isReplay
+    self.onCancel = onCancel
     self.onComplete = onComplete
   }
 
@@ -90,14 +96,25 @@ struct IndulgeOnboardingView: View {
   private func mainLayout(for proxy: GeometryProxy) -> some View {
     VStack(spacing: 0) {
       ZStack(alignment: .top) {
-        PersonalOnboardingStage(
-          state: profile.visualState,
-          presentation: profile.characterPresentation,
-          concealsIdentity: !profile.hasExplicitCharacterPresentation,
-          reduceMotion: reduceMotion,
-          showsCaption: false,
-          compact: usesCompactPersistentStage || textEntryIsFocused
-        )
+        if step == .name {
+          Color.white
+          Image("HabitsOnboarding")
+            .resizable()
+            .scaledToFit()
+            .padding(.horizontal, 18)
+            .padding(.top, proxy.safeAreaInsets.top + 48)
+            .padding(.bottom, 12)
+            .accessibilityLabel("A hand-drawn figure trades lost phone time for chosen time spent walking and growing.")
+        } else {
+          PersonalOnboardingStage(
+            state: profile.visualState,
+            presentation: profile.characterPresentation,
+            concealsIdentity: !profile.hasExplicitCharacterPresentation,
+            reduceMotion: reduceMotion,
+            showsCaption: false,
+            compact: usesCompactPersistentStage || textEntryIsFocused
+          )
+        }
 
         Color.white
           .opacity(textEntryIsFocused ? 0.08 : 0)
@@ -215,7 +232,14 @@ struct IndulgeOnboardingView: View {
       .frame(height: 44)
       .frame(maxWidth: .infinity)
 
-      if step.showsSkipAction {
+      if isReplay {
+        Button("Close", action: onCancel)
+          .font(.indulgeLabel)
+          .foregroundStyle(step == .name ? Color.indulgeNavy : .white.opacity(0.9))
+          .frame(minWidth: 52, minHeight: 44)
+          .buttonStyle(IndulgePressableButtonStyle())
+          .accessibilityHint("Returns without changing your Habits profile")
+      } else if step.showsSkipAction {
         Button("Skip", action: skipOptionalStep)
           .font(.indulgeLabel)
           .foregroundStyle(.white.opacity(0.82))
