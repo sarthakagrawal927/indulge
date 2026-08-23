@@ -25,6 +25,11 @@ not as punishment, streaks, or productivity metrics.
 
 ## Timeline
 
+- **2026-08-23:** Prepared Habits 0.1.0 (7) for internal TestFlight with the
+  truthful Significant Hobbies Hub scope, waiting-write count, freshness, and
+  actionable sync recovery from #38. Upload and Apple processing remain
+  separate release gates.
+
 - **2026-08-23:** Separated Apple-private iCloud device continuity from
   Significant Hobbies Hub visibility in Habits settings. Hub sync now states
   its completed-trade/check-in scope, reports actual durable outbox work and
