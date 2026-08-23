@@ -4,15 +4,114 @@ import Observation
 import PersonalSyncKit
 import SwiftData
 
+enum HabitsHubSyncFailure: Equatable {
+  case authenticationRequired
+  case networkUnavailable
+  case serviceUnavailable
+
+  static func classify(_ error: any Error) -> Self {
+    if let syncError = error as? PersonalSyncError,
+      case .server(let status, _) = syncError,
+      status == 401 || status == 403
+    {
+      return .authenticationRequired
+    }
+
+    if let identityError = error as? PersonalIdentityError {
+      switch identityError {
+      case .missingSession, .keychain:
+        return .authenticationRequired
+      case .server(let status, _) where status == 401 || status == 403:
+        return .authenticationRequired
+      case .invalidResponse, .server:
+        return .serviceUnavailable
+      }
+    }
+
+    if let urlError = error as? URLError {
+      switch urlError.code {
+      case .notConnectedToInternet, .networkConnectionLost, .timedOut, .cannotFindHost,
+        .cannotConnectToHost, .dnsLookupFailed, .internationalRoamingOff, .dataNotAllowed:
+        return .networkUnavailable
+      default:
+        return .serviceUnavailable
+      }
+    }
+
+    return .serviceUnavailable
+  }
+}
+
+struct HabitsHubSyncStatus: Equatable {
+  var isSyncing = false
+  var lastSuccessfulSyncAt: Date?
+  var pendingMutationCount = 0
+  var failure: HabitsHubSyncFailure?
+
+  var retryNeeded: Bool { pendingMutationCount > 0 || failure != nil }
+
+  var summary: String {
+    if isSyncing { return "Syncing completed trades with Hub…" }
+
+    let pendingDescription = switch pendingMutationCount {
+    case 0: "No completed trades are waiting to upload."
+    case 1: "1 completed trade is waiting safely on this device."
+    default: "\(pendingMutationCount) completed trades are waiting safely on this device."
+    }
+
+    switch failure {
+    case .authenticationRequired:
+      return
+        "Your Hub session needs attention. Sign out, then reconnect to continue syncing. \(pendingDescription)"
+    case .networkUnavailable:
+      return "No network connection. \(pendingDescription) Habits will retry when you reconnect."
+    case .serviceUnavailable:
+      return "Hub could not complete the sync. \(pendingDescription) Try again."
+    case nil:
+      guard let lastSuccessfulSyncAt else {
+        return "Not synced with Hub yet. \(pendingDescription)\(retryGuidance)"
+      }
+      return
+        "Last Hub sync: \(lastSuccessfulSyncAt.formatted(date: .abbreviated, time: .shortened)). \(pendingDescription)\(retryGuidance)"
+    }
+  }
+
+  private var retryGuidance: String {
+    pendingMutationCount > 0 ? " Habits will retry automatically; you can also use Sync now." : ""
+  }
+}
+
+enum HabitsSyncCopy {
+  static let appleContinuity =
+    "Supported signed builds may use your private iCloud database for continuity across Apple devices signed into your iCloud account. This is separate from Hub."
+  static let hubScope =
+    "Habits sends completed trades to your private Hub and can receive completed Hub check-ins into History. Your profile, active trade, reflections, and generated card are not sent to Hub."
+}
+
 @MainActor
 @Observable
 final class HabitsPlatformSync {
-  private let connection: PersonalPlatformConnection?
-  let account: PersonalAccountModel?
-  private(set) var isSyncing = false
-  private(set) var message: String?
+  private static let lastSuccessfulSyncKey = "habits-hub-last-successful-sync"
 
-  init(enabled: Bool) {
+  private let connection: PersonalPlatformConnection?
+  private let defaults: UserDefaults
+  private let now: () -> Date
+  let account: PersonalAccountModel?
+  private(set) var status: HabitsHubSyncStatus
+
+  var isSyncing: Bool { status.isSyncing }
+
+  init(
+    enabled: Bool,
+    defaults: UserDefaults = .standard,
+    now: @escaping () -> Date = Date.init
+  ) {
+    self.defaults = defaults
+    self.now = now
+    status = HabitsHubSyncStatus(
+      lastSuccessfulSyncAt: defaults.object(forKey: Self.lastSuccessfulSyncKey) as? Date
+    )
+
     guard enabled else {
       connection = nil
       account = nil
@@ -45,16 +144,23 @@ final class HabitsPlatformSync {
   }
 
   func synchronize(context: ModelContext, announcing: Bool = false) async {
-    guard let connection, !isSyncing else { return }
-    isSyncing = true
-    defer { isSyncing = false }
+    guard let connection, !status.isSyncing else { return }
+    guard account?.isSignedIn == true else {
+      await refreshPendingCount(using: connection)
+      if announcing { status.failure = .authenticationRequired }
+      return
+    }
+
+    status.isSyncing = true
+    status.failure = nil
+    defer { status.isSyncing = false }
     do {
       try await enqueueCompletedTrades(context: context, using: connection)
       let changes = try await connection.sync.synchronize()
       try apply(changes, context: context)
-      if announcing { message = "Cloudflare sync complete." }
+      await recordSuccessfulSync(using: connection)
     } catch {
-      if announcing { message = "Cloudflare sync will retry when you are online." }
+      await recordFailedSync(error, using: connection)
     }
   }
 
@@ -70,8 +176,10 @@ final class HabitsPlatformSync {
           occurredAt: occurredAt,
           record: payload
         )
-        _ = try? await connection.sync.synchronize()
-      } catch {}
+        await synchronizeQueuedChanges(using: connection)
+      } catch {
+        await recordFailedSync(error, using: connection)
+      }
     }
   }
 
@@ -85,8 +193,43 @@ final class HabitsPlatformSync {
           occurredAt: Self.iso(.now)
         )
       }
-      _ = try? await connection.sync.synchronize()
+      await synchronizeQueuedChanges(using: connection)
     }
+  }
+
+  private func synchronizeQueuedChanges(using connection: PersonalPlatformConnection) async {
+    await refreshPendingCount(using: connection)
+    guard account?.isSignedIn == true, !status.isSyncing else { return }
+
+    status.isSyncing = true
+    status.failure = nil
+    defer { status.isSyncing = false }
+    do {
+      _ = try await connection.sync.synchronize()
+      await recordSuccessfulSync(using: connection)
+    } catch {
+      await recordFailedSync(error, using: connection)
+    }
+  }
+
+  private func recordSuccessfulSync(using connection: PersonalPlatformConnection) async {
+    let completedAt = now()
+    status.lastSuccessfulSyncAt = completedAt
+    status.pendingMutationCount = await connection.sync.pendingMutationCount()
+    status.failure = nil
+    defaults.set(completedAt, forKey: Self.lastSuccessfulSyncKey)
+  }
+
+  private func recordFailedSync(
+    _ error: any Error,
+    using connection: PersonalPlatformConnection
+  ) async {
+    status.pendingMutationCount = await connection.sync.pendingMutationCount()
+    status.failure = HabitsHubSyncFailure.classify(error)
+  }
+
+  private func refreshPendingCount(using connection: PersonalPlatformConnection) async {
+    status.pendingMutationCount = await connection.sync.pendingMutationCount()
   }
 
   private func enqueueCompletedTrades(

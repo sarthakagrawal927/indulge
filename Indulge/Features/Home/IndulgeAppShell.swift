@@ -349,7 +349,7 @@ private struct IndulgeAboutView: View {
               .font(.indulgeTitle)
               .foregroundStyle(Color.indulgeText)
             Text(
-              "Your profile, trades, and reflections are local-first. Private iCloud sync is used only when a supported build is configured for it."
+              "Your profile, trades, and reflections are local-first. Habits stays usable without an account or network connection."
             )
             .font(.indulgeBody)
             .foregroundStyle(Color.indulgeText.opacity(0.68))
@@ -377,10 +377,19 @@ private struct IndulgeAboutView: View {
           .foregroundStyle(.secondary)
         }
 
+        Section("Apple device continuity") {
+          Text(HabitsSyncCopy.appleContinuity)
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+        }
+
         if let account = platform.account {
-          Section("Cloudflare sync") {
+          Section("Significant Hobbies Hub") {
             if account.isSignedIn {
-              Label(account.session?.email ?? "Personal account", systemImage: "checkmark.icloud")
+              Label(
+                account.session?.email ?? "Hub connected",
+                systemImage: "person.crop.circle.badge.checkmark"
+              )
               Button(platform.isSyncing ? "Syncing…" : "Sync now") {
                 Task { await platform.synchronize(context: modelContext, announcing: true) }
               }
@@ -414,9 +423,19 @@ private struct IndulgeAboutView: View {
               .disabled(account.isConnecting)
             }
 
-            Text(platform.message ?? account.errorMessage ?? "Optional. Habits stays fully usable offline and syncs through your private Personal Platform when connected.")
+            Text(HabitsSyncCopy.hubScope)
               .font(.footnote)
               .foregroundStyle(.secondary)
+
+            Text(
+              account.isSignedIn
+                ? platform.status.summary
+                : account.errorMessage
+                  ?? "Connect to make completed trades privately visible in Hub."
+            )
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .accessibilityIdentifier("hub-sync-status")
           }
         }
 
@@ -474,7 +493,7 @@ private struct IndulgeAboutView: View {
       Button("Keep my data", role: .cancel) {}
     } message: {
       Text(
-        "This removes local records and asks private iCloud sync to remove synchronized copies when configured."
+        "This removes local records and asks configured iCloud continuity and connected Hub sync to remove synchronized copies. Hub deletion applies to completed trades only."
       )
     }
   }
