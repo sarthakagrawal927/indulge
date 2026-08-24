@@ -1,13 +1,15 @@
 # Habits — Project Status
 
-Last updated: 2026-08-23
+Last updated: 2026-08-24
 
 ## Why / What
 
-Habits is a private, local-first native iPhone and iPad application that helps people
-keep intentional digital pleasure while trading automatic time loss for
-meaningful alternatives. Progress appears as an expanding animated life scene,
-not as punishment, streaks, or productivity metrics.
+**Status: retired / superseded by Anchor.** This repository is historical and
+has no active product roadmap. Anchor now owns day planning, recurring routines,
+focus timing, interruption evidence, schedule review, and non-moralizing pattern
+replacement. Existing Apple identities, local/private stores, Hub contracts,
+and public domains remain compatibility resources; no deletion or migration was
+performed.
 
 ## Dependencies
 
@@ -24,6 +26,16 @@ not as punishment, streaks, or productivity metrics.
   the immediate store; private CloudKit remains a temporary rollback path.
 
 ## Timeline
+
+- **2026-08-24:** Retired Habits/Indulge as a separate product after its useful
+  onboarding hero, 24 pattern illustrations, eight life-direction
+  illustrations, and behavior-change framing were made self-contained in
+  Anchor. The separate Life → Trade → History shell, scene-room system, future
+  life card, privacy lock, and duplicate focus journal remain historical source.
+  Fleet, Hub, and shared landing sources now identify Anchor as the maintained
+  successor. The repository, bundle ID, SwiftData schema, CloudKit container,
+  App Store/TestFlight record, domains, and Personal Platform `habits` records
+  were preserved for compatibility.
 
 - **2026-08-23:** Prepared Habits 0.1.0 (7) for internal TestFlight with the
   truthful Significant Hobbies Hub scope, waiting-write count, freshness, and
@@ -131,10 +143,10 @@ not as punishment, streaks, or productivity metrics.
 
 ## Products
 
-- **Habits for iPhone and iPad:** the primary consumer experience, retaining
-  the existing Indulge implementation identity for migration safety.
-- **Habits landing:** maintained by the shared iOS landing factory at
-  `https://habits.significanthobbies.com`.
+- **Anchor:** the maintained successor and only active consumer product.
+- **Habits/Indulge native source:** retained historical implementation.
+- **Habits and Indulge landings:** retained compatibility surfaces in the shared
+  iOS landing factory.
 
 ## Features (shipped)
 
@@ -162,4 +174,5 @@ not as punishment, streaks, or productivity metrics.
 
 ## Work queue
 
-- [GitHub Issues](https://github.com/Significant-Hobbies/indulge/issues)
+No active roadmap. Historical issues remain at
+[GitHub Issues](https://github.com/Significant-Hobbies/indulge/issues).

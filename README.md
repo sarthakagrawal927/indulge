@@ -1,4 +1,11 @@
-# Habits
+# Habits / Indulge — retired predecessor
+
+> **Retired on 2026-08-24.** Anchor is now the sole maintained product for day
+> planning, focus timing, interruption evidence, and non-moralizing pattern
+> replacement. Continue product work in
+> [`Significant-Hobbies/anchor`](https://github.com/Significant-Hobbies/anchor).
+> This repository is preserved as recoverable source and data-compatibility
+> history; it has no active roadmap.
 
 **Keep what helps. Trade what does not.**
 
@@ -13,7 +20,7 @@ customer-facing scene uses bundled original soft-3D plates with native,
 Reduce-Motion-aware presentation; the repository also retains the RealityKit
 scene engine used to prove the modular 24-indulgence system.
 
-## Local development
+## Historical local development
 
 Requirements:
 
@@ -31,11 +38,8 @@ matching runtime installed on the development Mac (currently iOS 26.4) plus the
 newest installed runtime. The app does not call RealityKit APIs newer than the
 iOS 18 availability boundary.
 
-Planning lives under `openspec/changes/`. The Apple-native intelligence, visual
-creation, privacy-lock, and private-sync preparation is tracked in
-[GitHub issue #3](https://github.com/Significant-Hobbies/indulge/issues/3).
-Physical visual-proof work remains tracked in
-[GitHub issue #1](https://github.com/Significant-Hobbies/indulge/issues/1).
+Historical planning and issues remain for provenance only. Do not start new
+product work here.
 
 The native app has no third-party runtime, web view, analytics SDK, remote-model
 call, or Cloudflare dependency. SwiftData is authoritative. Properly entitled
@@ -46,12 +50,12 @@ and SwiftData schema names remain unchanged so current data survives the rename.
 Image Playground is the only generative Apple surface in
 the current product, and the authored fallback remains complete without it.
 
-## Public site
+## Compatibility surfaces
 
-The replacement Habits landing is maintained by the shared `ios-landings`
-factory. The static Astro site under `src/` remains the current Indulge surface
-until a separate, manual domain cutover; this branch does not deploy or change
-the public domain.
+The Habits and Indulge landings are maintained by the shared `ios-landings`
+factory as compatibility surfaces that point to Anchor. The App Store record,
+bundle identifier, SwiftData schema, CloudKit container, and Hub `habits`
+contracts remain intact until a separately approved migration or deletion.
 
 ```bash
 pnpm install

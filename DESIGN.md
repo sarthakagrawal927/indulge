@@ -70,6 +70,11 @@ components:
 
 # Design System: Habits
 
+> **Retired design reference (2026-08-24).** Anchor carries the onboarding hero,
+> 24 pattern illustrations, eight life-direction illustrations, and humane
+> language. The remaining scene-room system is historical research, not an
+> active product direction.
+
 ## Overview
 
 **Creative North Star: “The Room Assembles Around You”**

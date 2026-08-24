@@ -1,5 +1,9 @@
 # Product
 
+> **Retired product specification (2026-08-24).** Anchor owns the maintained
+> schedule, focus, interruption, and behavior-change experience. This document
+> records the predecessor product and must not be treated as an active roadmap.
+
 <!-- impeccable:product-schema 1 -->
 
 ## Platform
